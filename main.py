@@ -83,3 +83,23 @@ def activate(invocation: Invocation) -> Result:
         sess.delete(result_account)
         sess.commit()
         return Result(args=[account_schema.dump(result_account)])
+
+
+@app.register("io.xconn.account.get")
+def get(invocation: Invocation) -> Result:
+    if len(invocation.args) != 1:
+        raise Exception("Exactly 1 argument is required: email")
+
+    email = invocation.args[0]
+
+    query = select(Account).where(Account.email == email)
+
+    with session() as sess:
+        account_schema = AccountSchema()
+        account = sess.execute(query)
+
+        result = account.scalars().first()
+        if result is None:
+            raise Exception("email not exists")
+
+        return Result(args=[account_schema.dump(result)])
