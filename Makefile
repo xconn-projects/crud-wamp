@@ -1,6 +1,12 @@
+install_uv:
+	@if ! command -v uv >/dev/null 2>&1; then \
+  		curl -LsSf https://astral.sh/uv/install.sh | sh; \
+  	fi
+
 setup:
-	python3 -m venv .venv
-	.venv/bin/pip install -r requirements.txt
+	make install_uv
+	uv venv
+	uv pip install -r requirements.txt
 
 lint:
 	./.venv/bin/ruff format .
