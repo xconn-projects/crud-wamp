@@ -103,3 +103,41 @@ def get(invocation: Invocation) -> Result:
             raise Exception("email not exists")
 
         return Result(args=[account_schema.dump(result)])
+
+
+@app.register("io.xconn.account.update")
+def update(invocation: Invocation) -> Result:
+    account_schema = AccountSchema()
+    input_data = {}
+
+    if invocation.args is None or len(invocation.args) != 1:
+        raise ApplicationError("io.xconn.invalid_argument",
+                               ["Exactly 1 arguments are required: email"])
+
+    if invocation.kwargs is None:
+        raise ApplicationError("io.xconn.invalid_argument", ["provide fields to update as kwargs"])
+
+    email = invocation.args[0]
+
+    fullname = invocation.kwargs.get("fullname", None)
+    if fullname is not None:
+        input_data.update({"fullname": fullname})
+
+    age = invocation.kwargs.get("age", None)
+    if age is not None:
+        input_data.update({"age": age})
+
+    if len(invocation.kwargs) != len(input_data):
+        raise ApplicationError("io.xconn.invalid_argument",
+                               ["only 'fullname' and 'age' is allowed to provide as kwarg"])
+
+    with session() as sess:
+        result = sess.execute(select(Account).where(Account.email == email))
+        account = result.scalars().first()
+        dictionary = account_schema.dump(account)
+        dictionary.update(input_data)
+        account.fullname = dictionary['fullname']
+        account.age = dictionary['age']
+        account.email = dictionary['email']
+        sess.commit()
+        return Result(args=[dictionary])
