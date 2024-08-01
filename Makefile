@@ -9,4 +9,4 @@ check-lint:
 	./.venv/bin/ruff check .
 
 run:
-	.venv/bin/xconn main:app
+	.venv/bin/xconn main:app --directory crud
