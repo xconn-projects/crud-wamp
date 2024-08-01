@@ -69,9 +69,7 @@ def activate(invocation: Invocation) -> Result:
         raise Exception(err)
 
     otp_query = select(Otp.otp).where(Otp.email == validated_data["email"])
-    account_query = select(TempAccount).where(
-        TempAccount.email == validated_data["email"]
-    )
+    account_query = select(TempAccount).where(TempAccount.email == validated_data["email"])
 
     with session() as sess:
         otp_result = sess.execute(otp_query)
@@ -121,14 +119,10 @@ def update(invocation: Invocation) -> Result:
     input_data = {}
 
     if invocation.args is None or len(invocation.args) != 1:
-        raise ApplicationError(
-            "io.xconn.invalid_argument", ["Exactly 1 arguments are required: email"]
-        )
+        raise ApplicationError("io.xconn.invalid_argument", ["Exactly 1 arguments are required: email"])
 
     if invocation.kwargs is None:
-        raise ApplicationError(
-            "io.xconn.invalid_argument", ["provide fields to update as kwargs"]
-        )
+        raise ApplicationError("io.xconn.invalid_argument", ["provide fields to update as kwargs"])
 
     email = invocation.args[0]
 
@@ -161,9 +155,7 @@ def update(invocation: Invocation) -> Result:
 @app.register("io.xconn.account.delete")
 def delete(invocation: Invocation) -> Result:
     if invocation.args is None or len(invocation.args) != 1:
-        raise ApplicationError(
-            "io.xconn.invalid_argument", ["Exactly 1 arguments are required: email"]
-        )
+        raise ApplicationError("io.xconn.invalid_argument", ["Exactly 1 arguments are required: email"])
 
     email = invocation.args[0]
     account_query = select(Account).where(Account.email == email)
