@@ -2,13 +2,14 @@ import random
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.future import select
 from marshmallow import ValidationError
 from xconn import XConnApp
 from xconn.types import Invocation, Result
 from xconn.exception import ApplicationError
 
-from models import Base, TempAccount, Otp
-from serializers import TempSchema
+from models import Base, TempAccount, Otp, Account
+from serializers import TempSchema, OtpSchema, AccountSchema
 
 engine = create_engine('sqlite:///user.db', echo=False)
 session = sessionmaker(bind=engine)
@@ -47,3 +48,38 @@ def create(invocation: Invocation) -> Result:
         sess.add(otp)
         sess.commit()
         return Result(args=[temp_schema.dump(temp_account)])
+
+
+@app.register("io.xconn.account.activate")
+def activate(invocation: Invocation) -> Result:
+    if len(invocation.args) != 2:
+        raise Exception("Exactly 2 arguments are required: fullname, email")
+
+    data = {
+        "email": invocation.args[0],
+        "otp": invocation.args[1],
+    }
+    otp_schema = OtpSchema()
+
+    try:
+        validated_data = otp_schema.load(data)
+    except ValidationError as err:
+        raise Exception(err)
+
+    otp_query = select(Otp.otp).where(Otp.email == validated_data["email"])
+    account_query = select(TempAccount).where(TempAccount.email == validated_data["email"])
+
+    with session() as sess:
+        otp_result = sess.execute(otp_query)
+        result = otp_result.scalars().first()
+        if result is None:
+            raise Exception("email not exists")
+        if result != validated_data["otp"]:
+            raise Exception("incorrect otp")
+        temp_account = sess.execute(account_query)
+        result_account = temp_account.scalars().first()
+        account_schema = AccountSchema()
+        sess.add(Account(fullname=result_account.fullname, age=result_account.age, email=result_account.email))
+        sess.delete(result_account)
+        sess.commit()
+        return Result(args=[account_schema.dump(result_account)])
