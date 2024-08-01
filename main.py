@@ -141,3 +141,20 @@ def update(invocation: Invocation) -> Result:
         account.email = dictionary['email']
         sess.commit()
         return Result(args=[dictionary])
+
+
+@app.register("io.xconn.account.delete")
+def delete(invocation: Invocation) -> Result:
+    if invocation.args is None or len(invocation.args) != 1:
+        raise ApplicationError("io.xconn.invalid_argument",
+                               ["Exactly 1 arguments are required: email"])
+
+    email = invocation.args[0]
+    account_query = select(Account).where(Account.email == email)
+
+    with session() as sess:
+        result = sess.execute(account_query)
+        account = result.scalars().first()
+        sess.delete(account)
+        sess.commit()
+        return Result(args=[f'{email} deleted'])
