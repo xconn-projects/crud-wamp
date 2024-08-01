@@ -19,11 +19,11 @@ class TempAccount(Base):
     fullname = Column(String(50))
     age = Column(Integer)
     email = Column(String(100), unique=True)
-    relationship("Otp", cascade='all, delete', uselist=False)
+    relationship("Otp", cascade="all, delete", uselist=False)
 
 
 class Otp(Base):
     __tablename__ = "otp"
     id = Column(Integer, primary_key=True)
     otp = Column(Integer())
-    email = Column(String(), ForeignKey('account.email'), unique=True)
+    email = Column(String(), ForeignKey("account.email"), unique=True)

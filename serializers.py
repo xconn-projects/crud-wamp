@@ -7,12 +7,12 @@ class AccountSchema(SQLAlchemyAutoSchema):
     age = fields.Int()
     email = fields.Email()
 
-    @validates('age')
+    @validates("age")
     def validate_age(self, age):
         if age > 120:
-            raise ValidationError('Age is too old')
+            raise ValidationError("Age is too old")
         elif age < 10 and age != 0:
-            raise ValidationError('Age is too young')
+            raise ValidationError("Age is too young")
 
 
 class TempSchema(SQLAlchemyAutoSchema):
@@ -20,12 +20,12 @@ class TempSchema(SQLAlchemyAutoSchema):
     age = fields.Int()
     email = fields.Email()
 
-    @validates('age')
+    @validates("age")
     def validate_age(self, age):
         if age > 120:
-            raise ValidationError('Age is too old')
+            raise ValidationError("Age is too old")
         elif age < 10:
-            raise ValidationError('Age is too young')
+            raise ValidationError("Age is too young")
 
 
 class OtpSchema(SQLAlchemyAutoSchema):

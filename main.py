@@ -11,7 +11,7 @@ from xconn.exception import ApplicationError
 from models import Base, TempAccount, Otp, Account
 from serializers import TempSchema, OtpSchema, AccountSchema
 
-engine = create_engine('sqlite:///user.db', echo=False)
+engine = create_engine("sqlite:///user.db", echo=False)
 session = sessionmaker(bind=engine)
 with engine.begin() as conn:
     Base.metadata.create_all(conn)
@@ -25,13 +25,15 @@ def create(invocation: Invocation) -> Result:
     otp_value = random.randint(10000, 99999)
 
     if invocation.args is None or len(invocation.args) != 3:
-        raise ApplicationError("io.xconn.invalid_argument",
-                               ["Exactly 3 arguments are required: fullname, age, email"])
+        raise ApplicationError(
+            "io.xconn.invalid_argument",
+            ["Exactly 3 arguments are required: fullname, age, email"],
+        )
 
     data = {
         "fullname": invocation.args[0],
         "age": invocation.args[1],
-        "email": invocation.args[2]
+        "email": invocation.args[2],
     }
 
     try:
@@ -40,7 +42,7 @@ def create(invocation: Invocation) -> Result:
         raise ApplicationError("io.xconn.invalid_argument", [str(err)])
 
     temp_account = TempAccount(**validated_data)
-    otp = Otp(otp=otp_value, email=validated_data['email'])
+    otp = Otp(otp=otp_value, email=validated_data["email"])
     print(otp_value)
 
     with session() as sess:
@@ -67,7 +69,9 @@ def activate(invocation: Invocation) -> Result:
         raise Exception(err)
 
     otp_query = select(Otp.otp).where(Otp.email == validated_data["email"])
-    account_query = select(TempAccount).where(TempAccount.email == validated_data["email"])
+    account_query = select(TempAccount).where(
+        TempAccount.email == validated_data["email"]
+    )
 
     with session() as sess:
         otp_result = sess.execute(otp_query)
@@ -79,7 +83,13 @@ def activate(invocation: Invocation) -> Result:
         temp_account = sess.execute(account_query)
         result_account = temp_account.scalars().first()
         account_schema = AccountSchema()
-        sess.add(Account(fullname=result_account.fullname, age=result_account.age, email=result_account.email))
+        sess.add(
+            Account(
+                fullname=result_account.fullname,
+                age=result_account.age,
+                email=result_account.email,
+            )
+        )
         sess.delete(result_account)
         sess.commit()
         return Result(args=[account_schema.dump(result_account)])
@@ -111,11 +121,14 @@ def update(invocation: Invocation) -> Result:
     input_data = {}
 
     if invocation.args is None or len(invocation.args) != 1:
-        raise ApplicationError("io.xconn.invalid_argument",
-                               ["Exactly 1 arguments are required: email"])
+        raise ApplicationError(
+            "io.xconn.invalid_argument", ["Exactly 1 arguments are required: email"]
+        )
 
     if invocation.kwargs is None:
-        raise ApplicationError("io.xconn.invalid_argument", ["provide fields to update as kwargs"])
+        raise ApplicationError(
+            "io.xconn.invalid_argument", ["provide fields to update as kwargs"]
+        )
 
     email = invocation.args[0]
 
@@ -128,17 +141,19 @@ def update(invocation: Invocation) -> Result:
         input_data.update({"age": age})
 
     if len(invocation.kwargs) != len(input_data):
-        raise ApplicationError("io.xconn.invalid_argument",
-                               ["only 'fullname' and 'age' is allowed to provide as kwarg"])
+        raise ApplicationError(
+            "io.xconn.invalid_argument",
+            ["only 'fullname' and 'age' is allowed to provide as kwarg"],
+        )
 
     with session() as sess:
         result = sess.execute(select(Account).where(Account.email == email))
         account = result.scalars().first()
         dictionary = account_schema.dump(account)
         dictionary.update(input_data)
-        account.fullname = dictionary['fullname']
-        account.age = dictionary['age']
-        account.email = dictionary['email']
+        account.fullname = dictionary["fullname"]
+        account.age = dictionary["age"]
+        account.email = dictionary["email"]
         sess.commit()
         return Result(args=[dictionary])
 
@@ -146,8 +161,9 @@ def update(invocation: Invocation) -> Result:
 @app.register("io.xconn.account.delete")
 def delete(invocation: Invocation) -> Result:
     if invocation.args is None or len(invocation.args) != 1:
-        raise ApplicationError("io.xconn.invalid_argument",
-                               ["Exactly 1 arguments are required: email"])
+        raise ApplicationError(
+            "io.xconn.invalid_argument", ["Exactly 1 arguments are required: email"]
+        )
 
     email = invocation.args[0]
     account_query = select(Account).where(Account.email == email)
@@ -157,4 +173,4 @@ def delete(invocation: Invocation) -> Result:
         account = result.scalars().first()
         sess.delete(account)
         sess.commit()
-        return Result(args=[f'{email} deleted'])
+        return Result(args=[f"{email} deleted"])
