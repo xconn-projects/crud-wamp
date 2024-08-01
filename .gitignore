@@ -1,3 +1,6 @@
 .venv
 user.db
 .idea
+build
+*.egg-info/
+*.egg
